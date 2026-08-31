@@ -1,0 +1,66 @@
+## Build and output directories
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+TestResults/
+[Tt]emp/
+
+## Visual Studio & IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+*.svclog
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+_ReSharper*/
+*.resharper
+*.DotSettings.user
+
+## Secrets & Local Configuration
+appsettings.Development.json
+appsettings.*.local.json
+appsettings.Local.json
+appsettings.Production.json
+*.local.json
+.env
+.env.*
+!.env.example
+secrets.json
+
+## Database files / SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+## Machine Learning Models & Large Binaries
+*.onnx
+models/onnx/
+**/models/onnx/
+**/Models/onnx/
+
+## Package cache & build artifacts
+*.nuget.props
+*.nuget.targets
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/

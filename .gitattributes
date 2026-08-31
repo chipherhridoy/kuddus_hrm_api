@@ -1,0 +1,38 @@
+# Set default line ending behavior
+* text=auto
+
+# Code and configuration files (normalize to LF in git repo)
+*.cs text diff=csharp
+*.json text
+*.xml text
+*.csproj text
+*.sln text eol=crlf
+*.props text
+*.targets text
+*.config text
+*.md text
+*.yaml text
+*.yml text
+*.toml text
+*.env* text
+.gitignore text
+.dockerignore text
+
+# Scripts
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files (do not touch line endings)
+*.onnx binary
+*.dll binary
+*.exe binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary

@@ -1,0 +1,43 @@
+@AgenticHrmApi_HostAddress = http://localhost:5110
+
+### Get Challenge
+POST {{AgenticHrmApi_HostAddress}}/api/face/challenge
+Accept: application/json
+
+### Login
+POST {{AgenticHrmApi_HostAddress}}/api/face/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "challengeId": "00000000-0000-0000-0000-000000000000",
+  "steps": [
+    {
+      "action": "smile",
+      "cropBase64": "...",
+      "evidence": 0.91,
+      "timestampMs": 1200
+    }
+  ],
+  "frontalBase64": "..."
+}
+
+### Enroll
+POST {{AgenticHrmApi_HostAddress}}/api/face/enroll
+Authorization: Bearer <Admin_JWT>
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userId": 3,
+  "captures": [
+    {
+      "pose": "frontal",
+      "cropBase64": "..."
+    }
+  ]
+}
+
+### Delete Face
+DELETE {{AgenticHrmApi_HostAddress}}/api/face/3
+Authorization: Bearer <Admin_JWT>

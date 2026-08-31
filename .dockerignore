@@ -1,0 +1,9 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/TestResults
+AgenticHrmApi.Tests/
