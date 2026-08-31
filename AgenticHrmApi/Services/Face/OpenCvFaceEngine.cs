@@ -138,7 +138,7 @@ public class OpenCvFaceEngine : IFaceEngine, IDisposable
                 using var aligned = new Mat();
                 Cv2.WarpAffine(img, aligned, tMat, new Size(112, 112));
 
-                using var blob = CvDnn.BlobFromImage(aligned, 1.0, new Size(112, 112), new Scalar(0, 0, 0), swapRB: false, crop: false);
+                using var blob = CvDnn.BlobFromImage(aligned, 1.0, new Size(112, 112), new OpenCvSharp.Scalar(0, 0, 0), swapRB: false, crop: false);
                 _recognizerNet.SetInput(blob);
                 using var feature = _recognizerNet.Forward();
 

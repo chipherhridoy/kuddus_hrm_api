@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using AgenticHrmApi.Services.Face;
+using Scalar.AspNetCore;
+
 // Enable legacy timestamp behavior for Npgsql to seamlessly handle DateTime
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -31,6 +33,7 @@ if (!string.IsNullOrEmpty(renderPort))
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
@@ -209,11 +212,15 @@ using (var scope = app.Services.CreateScope())
 // Enable CORS
 app.UseCors("AllowAll");
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Enable OpenAPI spec & Scalar Interactive API Reference (modern .NET 9 Swagger UI)
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-}
+    options.WithTitle("Kuddus HRM API Documentation & Test Runner")
+           .WithTheme(ScalarTheme.Mars)
+           .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+});
+app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 
 // Root endpoint for quick health check & status
 app.MapGet("/", async (AppDbContext db) =>
@@ -227,6 +234,12 @@ app.MapGet("/", async (AppDbContext db) =>
         status = "Agentic HRM API is running",
         database = "Neon PostgreSQL (Supabase compatible)",
         connected = true,
+        documentation = new
+        {
+            interactiveUI = "/scalar/v1",
+            swaggerUrl = "/swagger",
+            openApiSpec = "/openapi/v1.json"
+        },
         summary = new
         {
             totalUsers = userCount,
