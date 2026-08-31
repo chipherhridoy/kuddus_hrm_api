@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender1 \
     libgtk-3-0 \
+    libatomic1 \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
