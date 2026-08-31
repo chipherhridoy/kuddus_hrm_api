@@ -94,7 +94,17 @@ var sface = Path.Combine(builder.Environment.ContentRootPath,
 foreach (var p in new[] { yunet, sface })
     if (!File.Exists(p)) throw new FileNotFoundException(
         $"Face model missing: {p}. Run scripts/fetch-models.ps1.", p);
-builder.Services.AddSingleton<IFaceEngine>(_ => new OpenCvFaceEngine(yunet, sface));
+try
+{
+    var faceEngine = new OpenCvFaceEngine(yunet, sface);
+    builder.Services.AddSingleton<IFaceEngine>(faceEngine);
+    Console.WriteLine("[INFO] OpenCvFaceEngine initialized successfully with YuNet and SFace models.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[FATAL] Failed to initialize OpenCvFaceEngine: {ex}");
+    throw;
+}
 
 builder.Services.AddScoped<AttendanceService>();
 builder.Services.AddScoped<LeaveIntentHandler>();
