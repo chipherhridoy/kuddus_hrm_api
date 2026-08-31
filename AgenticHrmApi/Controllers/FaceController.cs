@@ -42,27 +42,35 @@ public class FaceController : ControllerBase
     [EnableRateLimiting("face")]
     public async Task<IActionResult> CreateChallenge()
     {
-        var allActions = new[] { "blink", "smile", "turn_left", "turn_right", "nod" };
-        var chosen = allActions.OrderBy(_ => RandomNumberGenerator.GetInt32(int.MaxValue)).Take(FaceTuning.ActionsPerChallenge).ToArray();
-        
-        var challenge = new FaceChallenge
+        try
         {
-            Id = Guid.NewGuid(),
-            Actions = string.Join(",", chosen),
-            ExpiresAt = DateTime.UtcNow.AddSeconds(FaceTuning.ChallengeTtlSeconds),
-            Consumed = false,
-            CreatedAt = DateTime.UtcNow
-        };
+            var allActions = new[] { "blink", "smile", "turn_left", "turn_right", "nod" };
+            var chosen = allActions.OrderBy(_ => RandomNumberGenerator.GetInt32(int.MaxValue)).Take(FaceTuning.ActionsPerChallenge).ToArray();
+            
+            var challenge = new FaceChallenge
+            {
+                Id = Guid.NewGuid(),
+                Actions = string.Join(",", chosen),
+                ExpiresAt = DateTime.UtcNow.AddSeconds(FaceTuning.ChallengeTtlSeconds),
+                Consumed = false,
+                CreatedAt = DateTime.UtcNow
+            };
 
-        _db.FaceChallenges.Add(challenge);
-        await _db.SaveChangesAsync();
+            _db.FaceChallenges.Add(challenge);
+            await _db.SaveChangesAsync();
 
-        return Ok(new FaceChallengeResponse
+            return Ok(new FaceChallengeResponse
+            {
+                ChallengeId = challenge.Id,
+                Actions = chosen,
+                ExpiresAt = challenge.ExpiresAt
+            });
+        }
+        catch (Exception ex)
         {
-            ChallengeId = challenge.Id,
-            Actions = chosen,
-            ExpiresAt = challenge.ExpiresAt
-        });
+            _logger.LogError(ex, "Exception creating face challenge");
+            return StatusCode(500, new { message = $"Failed to create face challenge: {ex.Message}" });
+        }
     }
 
     [HttpPost("login")]
@@ -190,16 +198,24 @@ public class FaceController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Enroll([FromBody] FaceEnrollRequest request)
     {
-        int currentUserId = this.CurrentUserId();
-        var (success, error, count) = await _enrollmentService.EnrollUserAsync(request.UserId, currentUserId, request);
-
-        if (!success)
+        try
         {
-            if (error == "This face is already enrolled for another user.") return Conflict(new { message = error });
-            return BadRequest(new { message = error });
-        }
+            int currentUserId = this.CurrentUserId();
+            var (success, error, count) = await _enrollmentService.EnrollUserAsync(request.UserId, currentUserId, request);
 
-        return Ok(new { userId = request.UserId, templatesStored = count, enrolledAt = DateTime.UtcNow });
+            if (!success)
+            {
+                if (error == "This face is already enrolled for another user.") return Conflict(new { message = error });
+                return BadRequest(new { message = error });
+            }
+
+            return Ok(new { userId = request.UserId, templatesStored = count, enrolledAt = DateTime.UtcNow });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception during face enrollment");
+            return StatusCode(500, new { message = $"Server error during enrollment: {ex.Message}" });
+        }
     }
 
     [HttpDelete("{userId}")]
