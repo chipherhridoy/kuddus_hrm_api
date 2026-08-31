@@ -14,6 +14,12 @@ using AgenticHrmApi.Services.Face;
 // Enable legacy timestamp behavior for Npgsql to seamlessly handle DateTime
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
+// Use polling file watcher on Linux containers (Render, Kubernetes, Fargate) where inotify limit (128) is exhausted
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER")))
+{
+    Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "true");
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Dynamically bind to Render's PORT environment variable if provided
