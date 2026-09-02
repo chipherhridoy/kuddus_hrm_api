@@ -7,8 +7,23 @@ public class HandlerResult
     public bool DidAct { get; init; }
     public PendingAction? Pending { get; init; }
 
-    public static HandlerResult Open(string reply, PendingAction? pending = null) =>
-        new() { Reply = reply, ConversationOpen = true, Pending = pending };
+    /// Spoken length budget for this reply. HR replies state one fact and
+    /// stay terse; open-domain answers need room for three sentences.
+    public int MaxReplyChars { get; init; } = DefaultMaxReplyChars;
+
+    public const int DefaultMaxReplyChars = 200;
+
+    public static HandlerResult Open(
+        string reply,
+        PendingAction? pending = null,
+        int maxReplyChars = DefaultMaxReplyChars) =>
+        new()
+        {
+            Reply = reply,
+            ConversationOpen = true,
+            Pending = pending,
+            MaxReplyChars = maxReplyChars
+        };
 
     public static HandlerResult Closed(string reply) =>
         new() { Reply = reply, ConversationOpen = false };

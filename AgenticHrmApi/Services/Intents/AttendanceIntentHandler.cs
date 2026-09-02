@@ -4,8 +4,8 @@ namespace AgenticHrmApi.Services.Intents;
 
 public class AttendanceIntentHandler(AttendanceService attendance) : IIntentHandler
 {
-    public bool CanHandle(string intent) =>
-        intent is "attendance.checkin" or "attendance.checkout";
+    public bool CanHandle(IntentContext ctx) =>
+        ctx.Intent is "attendance.checkin" or "attendance.checkout";
 
     public async Task<HandlerResult> HandleAsync(IntentContext ctx, CancellationToken ct = default)
     {

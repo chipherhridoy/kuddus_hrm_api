@@ -13,7 +13,7 @@ public class LeaveIntentHandler(AppDbContext db, IClock clock) : IIntentHandler
     /// Sentinel the reasoner emits for a word it cannot resolve, e.g. bare "kal".
     public const string AmbiguousPrefix = "ambiguous:";
 
-    public bool CanHandle(string intent) => intent == "leave.apply";
+    public bool CanHandle(IntentContext ctx) => ctx.Intent == "leave.apply";
 
     public Task<HandlerResult> HandleAsync(IntentContext ctx, CancellationToken ct = default)
     {

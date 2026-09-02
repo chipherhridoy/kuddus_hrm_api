@@ -116,6 +116,12 @@ builder.Services.AddHostedService<FaceAuditCleanupService>();
 builder.Services.AddHttpClient<GeminiReasoner>();
 builder.Services.AddScoped<IReasoner>(sp => sp.GetRequiredService<GeminiReasoner>());
 
+// A second, separate Gemini call: search-grounded prose for anything that
+// is not an HR action. It cannot share the reasoner's call — Gemini
+// rejects the googleSearch tool alongside JSON mode.
+builder.Services.AddHttpClient<GroundedAnswerer>();
+builder.Services.AddScoped<IAnswerer>(sp => sp.GetRequiredService<GroundedAnswerer>());
+
 builder.Services.AddScoped<IntentRouter>(sp =>
 {
     var leave = sp.GetRequiredService<LeaveIntentHandler>();
@@ -127,7 +133,7 @@ builder.Services.AddScoped<IntentRouter>(sp =>
         manager,
         new QueryIntentHandler(sp.GetRequiredService<AppDbContext>(), sp.GetRequiredService<IClock>()),
         new ControlIntentHandler(leave, manager),
-        new ChatIntentHandler()
+        new ChatIntentHandler(sp.GetRequiredService<IAnswerer>())
     ]);
 });
 

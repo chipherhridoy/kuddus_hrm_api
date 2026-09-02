@@ -10,7 +10,9 @@ public class AgentEndpointTests
     [Fact]
     public async Task Converse_rejects_a_request_with_neither_audio_nor_text()
     {
-        var controller = new AgentController(null!, null!)
+        // Nulls are safe here: the bad-request guard returns before any
+        // dependency is touched.
+        var controller = new AgentController(null!, null!, null!)
         {
             ControllerContext = new ControllerContext
             {

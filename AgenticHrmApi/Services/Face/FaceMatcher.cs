@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace AgenticHrmApi.Services.Face;
 
 public readonly record struct MatchResult(int? UserId, float Score, float Margin, string Outcome);
@@ -6,12 +10,32 @@ public static class FaceMatcher
 {
     public static MatchResult BestMatch(float[] probe, IReadOnlyList<(int UserId, float[] Vec)> templates)
     {
-        if (templates.Count == 0)
+        var withPose = templates.Select(t => (t.UserId, Pose: "frontal", t.Vec)).ToList();
+        return BestMatch(probe, withPose, preferredPose: null);
+    }
+
+    public static MatchResult BestMatch(
+        float[] probe,
+        IReadOnlyList<(int UserId, string Pose, float[] Vec)> templates,
+        string? preferredPose = null)
+    {
+        if (templates.Count == 0 || probe == null || probe.Length == 0)
             return new MatchResult(null, 0f, 0f, "NoMatch");
 
         var bestScoreByUser = new Dictionary<int, float>();
 
-        foreach (var t in templates)
+        // If a preferred pose is requested, prioritize templates matching that pose
+        var candidateTemplates = templates;
+        if (!string.IsNullOrEmpty(preferredPose))
+        {
+            var preferredList = templates.Where(t => string.Equals(t.Pose, preferredPose, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (preferredList.Count > 0)
+            {
+                candidateTemplates = preferredList;
+            }
+        }
+
+        foreach (var t in candidateTemplates)
         {
             float score = CosineSimilarity(probe, t.Vec);
             if (!bestScoreByUser.TryGetValue(t.UserId, out float currentBest) || score > currentBest)
@@ -19,6 +43,9 @@ public static class FaceMatcher
                 bestScoreByUser[t.UserId] = score;
             }
         }
+
+        if (bestScoreByUser.Count == 0)
+            return new MatchResult(null, 0f, 0f, "NoMatch");
 
         var sorted = bestScoreByUser.OrderByDescending(kvp => kvp.Value).ToList();
         var best = sorted[0];
@@ -54,3 +81,4 @@ public static class FaceMatcher
         return (float)(dot / (Math.Sqrt(magA) * Math.Sqrt(magB)));
     }
 }
+

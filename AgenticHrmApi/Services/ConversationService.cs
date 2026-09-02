@@ -12,9 +12,11 @@ public class ConversationService(
     IClock clock,
     ILogger<ConversationService> log)
 {
-    public const int MaxTurns = 12;
+    /// 12 was sized for HR commands only. Open-domain answering makes a
+    /// legitimate session much longer.
+    public const int MaxTurns = 24;
     public const int MaxReplyChars = 200;
-    public const int MaxHistoryTurns = 10;
+    public const int MaxHistoryTurns = 16;
     public const int MaxSlotReasks = 2;
     public const int MaxConsecutiveEmpty = 2;
     public const string EmptyTranscriptReply = "Sorry, I didn't catch that.";
@@ -91,7 +93,7 @@ public class ConversationService(
 
             return new ConverseResponse
             {
-                Reply = Cap(result.Reply),
+                Reply = Cap(result.Reply, result.MaxReplyChars),
                 Transcript = transcript,
                 Intent = reasoning.Intent,
                 ConversationOpen = result.ConversationOpen,
@@ -138,8 +140,29 @@ public class ConversationService(
     private static string Combine(string? prefix, string text) =>
         string.IsNullOrWhiteSpace(prefix) ? text.Trim() : $"{prefix.Trim()} {text.Trim()}".Trim();
 
-    private static string Cap(string s) =>
-        s.Length <= MaxReplyChars ? s : s[..MaxReplyChars].TrimEnd();
+    /// Trims a reply to its spoken length budget.
+    ///
+    /// The reply is read aloud, so where it stops matters. A plain slice
+    /// produced things like "...which the plant use" mid-word, which sounds
+    /// broken. Prefer the last complete sentence inside the budget, then a
+    /// word boundary, and only hard-cut when the text offers neither.
+    ///
+    /// Public because it is a pure string function with no state, and the
+    /// per-result cap is worth testing directly.
+    public static string Cap(string s, int maxChars)
+    {
+        if (s.Length <= maxChars) return s;
+
+        var window = s[..maxChars];
+
+        var sentenceEnd = window.LastIndexOfAny(['.', '!', '?']);
+        if (sentenceEnd > 0) return window[..(sentenceEnd + 1)].TrimEnd();
+
+        var wordEnd = window.LastIndexOf(' ');
+        if (wordEnd > 0) return window[..wordEnd].TrimEnd();
+
+        return window.TrimEnd();
+    }
 
     private static ConverseResponse Close(string reply) =>
         new() { Reply = reply, ConversationOpen = false };

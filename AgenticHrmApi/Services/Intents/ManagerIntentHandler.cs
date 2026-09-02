@@ -10,7 +10,7 @@ public class ManagerIntentHandler(AppDbContext db, IClock clock) : IIntentHandle
     public const string SlotWho = "who";
     public static readonly TimeSpan PendingActionTtl = TimeSpan.FromMinutes(2);
 
-    public bool CanHandle(string intent) => intent is "leave.approve" or "leave.reject";
+    public bool CanHandle(IntentContext ctx) => ctx.Intent is "leave.approve" or "leave.reject";
 
     public async Task<HandlerResult> HandleAsync(IntentContext ctx, CancellationToken ct = default)
     {

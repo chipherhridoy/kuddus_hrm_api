@@ -9,7 +9,10 @@ namespace AgenticHrmApi.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class AgentController(ConversationService conversation, GroqApiService groq) : ControllerBase
+public class AgentController(
+    ConversationService conversation,
+    GroqApiService groq,
+    AgenticHrmApi.Data.AppDbContext db) : ControllerBase
 {
     [HttpPost("converse")]
     public async Task<IActionResult> Converse([FromForm] ConverseRequest req, CancellationToken ct = default)
@@ -20,8 +23,21 @@ public class AgentController(ConversationService conversation, GroqApiService gr
 
         if (req.Audio is { Length: > 0 } && string.IsNullOrWhiteSpace(req.Text))
         {
+            // The recogniser is biased toward the speaker's own name and
+            // department, which is what stops "Kuddus" arriving as one of
+            // nineteen spellings.
+            var speaker = await db.Users.FindAsync([req.UserId], ct);
+            var hints = new TranscriptionHints(
+                speaker?.Name ?? "the user",
+                speaker?.Department ?? "the company");
+
             await using var stream = req.Audio.OpenReadStream();
-            req.Text = await groq.TranscribeAudioAsync(stream, req.Audio.FileName);
+            var transcription = await groq.TranscribeAudioAsync(stream, req.Audio.FileName, hints, ct);
+
+            // A hallucinated transcript is worse than none: it makes Kuddus
+            // act on words nobody said. An empty Text routes into
+            // ConversationService's existing "didn't catch that" path.
+            req.Text = transcription.IsLikelyHallucination ? string.Empty : transcription.Text;
         }
 
         return Ok(await conversation.ProcessAsync(req, this.User, ct));

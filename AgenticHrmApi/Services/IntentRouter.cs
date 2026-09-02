@@ -8,7 +8,7 @@ public class IntentRouter(IEnumerable<IIntentHandler> handlers)
 
     public Task<HandlerResult> RouteAsync(IntentContext ctx, CancellationToken ct = default)
     {
-        var handler = _handlers.FirstOrDefault(h => h.CanHandle(ctx.Intent));
+        var handler = _handlers.FirstOrDefault(h => h.CanHandle(ctx));
         return handler is null
             ? Task.FromResult(HandlerResult.Open(
                 "Sorry, I didn't follow. You can check in, apply for leave, or ask about your attendance."))

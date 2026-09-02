@@ -6,8 +6,8 @@ namespace AgenticHrmApi.Services.Intents;
 
 public class QueryIntentHandler(AppDbContext db, IClock clock) : IIntentHandler
 {
-    public bool CanHandle(string intent) =>
-        intent is "query.attendance" or "query.leaves" or "query.stats";
+    public bool CanHandle(IntentContext ctx) =>
+        ctx.Intent is "query.attendance" or "query.leaves" or "query.stats";
 
     public async Task<HandlerResult> HandleAsync(IntentContext ctx, CancellationToken ct = default)
     {

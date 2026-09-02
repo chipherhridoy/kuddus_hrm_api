@@ -67,6 +67,63 @@ public class FaceEngineTests
     }
 
     [Fact]
+    public void Matcher_WithPreferredPose_PrioritizesMatchingPose()
+    {
+        var probe = new float[128];
+        probe[0] = 1f;
+
+        // User 1 has a frontal template with 0.95 similarity and a yaw_left template with 0.4 similarity
+        var tFrontal = new float[128];
+        tFrontal[0] = 0.95f;
+        tFrontal[1] = 0.3122f;
+
+        var tYawLeft = new float[128];
+        tYawLeft[0] = 0.4f;
+        tYawLeft[1] = 0.9165f;
+
+        var templates = new List<(int UserId, string Pose, float[] Vec)>
+        {
+            (1, "frontal", tFrontal),
+            (1, "yaw_left", tYawLeft),
+        };
+
+        var resultFrontal = FaceMatcher.BestMatch(probe, templates, preferredPose: "frontal");
+        Assert.Equal("Success", resultFrontal.Outcome);
+        Assert.Equal(1, resultFrontal.UserId);
+        Assert.True(resultFrontal.Score > 0.9f);
+
+        // If matching against yaw_left probe, yaw_left template is evaluated
+        var leftProbe = new float[128];
+        leftProbe[0] = 0.4f;
+        leftProbe[1] = 0.9165f;
+        var resultYawLeft = FaceMatcher.BestMatch(leftProbe, templates, preferredPose: "yaw_left");
+        Assert.Equal("Success", resultYawLeft.Outcome);
+        Assert.Equal(1, resultYawLeft.UserId);
+        Assert.True(resultYawLeft.Score > 0.9f);
+    }
+
+    [Fact]
+    public void Matcher_WithPreferredPose_FallsBackIfPoseNotPresent()
+    {
+        var probe = new float[128];
+        probe[0] = 1f;
+
+        var tFrontal = new float[128];
+        tFrontal[0] = 0.9f;
+        tFrontal[1] = 0.4358f;
+
+        var templates = new List<(int UserId, string Pose, float[] Vec)>
+        {
+            (1, "frontal", tFrontal)
+        };
+
+        // Asks for "yaw_right" which doesn't exist; falls back gracefully to existing templates
+        var result = FaceMatcher.BestMatch(probe, templates, preferredPose: "yaw_right");
+        Assert.Equal("Success", result.Outcome);
+        Assert.Equal(1, result.UserId);
+    }
+
+    [Fact]
     public void Cipher_RoundTrips()
     {
         var key = new byte[32];

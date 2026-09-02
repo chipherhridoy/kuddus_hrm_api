@@ -131,9 +131,9 @@ public class FaceController : ControllerBase
             }
 
             var activeTemplates = await _db.FaceTemplates.Where(t => t.IsActive).ToListAsync();
-            var parsedTemplates = activeTemplates.Select(t => (t.UserId, _cipher.Decrypt(t.EncryptedEmbedding, t.Nonce, t.Tag))).ToList();
+            var parsedTemplates = activeTemplates.Select(t => (t.UserId, Pose: t.Pose, Vec: _cipher.Decrypt(t.EncryptedEmbedding, t.Nonce, t.Tag))).ToList();
 
-            var match = FaceMatcher.BestMatch(frontalEmb, parsedTemplates);
+            var match = FaceMatcher.BestMatch(frontalEmb, parsedTemplates, preferredPose: "frontal");
             attempt.BestScore = match.Score;
 
             if (match.Outcome != FaceOutcome.Success)
@@ -143,14 +143,25 @@ public class FaceController : ControllerBase
                 return Unauthorized(new { message = "Face not recognised" });
             }
 
-            // Cross-check steps
-            foreach (var stepEmb in stepEmbeddings)
+            // Cross-check steps using corresponding pose templates
+            for (int i = 0; i < request.Steps.Count && i < stepEmbeddings.Count; i++)
             {
-                var stepMatch = FaceMatcher.BestMatch(stepEmb, parsedTemplates.Where(t => t.UserId == match.UserId).ToList());
+                var step = request.Steps[i];
+                var stepEmb = stepEmbeddings[i];
+                string preferredPose = step.Action switch
+                {
+                    "turn_left" => "yaw_left",
+                    "turn_right" => "yaw_right",
+                    "nod" => "down",
+                    _ => "frontal"
+                };
+
+                var userTemplates = parsedTemplates.Where(t => t.UserId == match.UserId).ToList();
+                var stepMatch = FaceMatcher.BestMatch(stepEmb, userTemplates, preferredPose: preferredPose);
                 if (stepMatch.Score < FaceTuning.MatchThreshold)
                 {
                     attempt.Outcome = FaceOutcome.SpoofSuspected;
-                    attempt.FailureDetail = "STEP_IDENTITY_MISMATCH";
+                    attempt.FailureDetail = $"STEP_IDENTITY_MISMATCH_{step.Action.ToUpper()}";
                     return Unauthorized(new { message = "Face not recognised" });
                 }
             }

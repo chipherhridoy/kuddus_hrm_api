@@ -81,7 +81,13 @@ public class GeminiReasoner(
         sb.AppendLine("Return ONLY raw JSON: { \"intent\": \"...\", \"slots\": { }, \"reply\": \"...\" }");
         sb.AppendLine("Valid intents: attendance.checkin, attendance.checkout, leave.apply,");
         sb.AppendLine("leave.approve, leave.reject, query.attendance, query.leaves, query.stats,");
-        sb.AppendLine("chat.smalltalk, chat.help, control.confirm, control.deny, control.cancel.");
+        sb.AppendLine("chat.answer, chat.smalltalk, chat.help, control.confirm, control.deny,");
+        sb.AppendLine("control.cancel.");
+        sb.AppendLine("Use chat.answer for ANY question or request that is not an HR action:");
+        sb.AppendLine("general knowledge, current events, weather, arithmetic, translation,");
+        sb.AppendLine("advice, definitions, or a follow-up like 'yes' after an offer of detail.");
+        sb.AppendLine("Use chat.help only for questions about what YOU can do.");
+        sb.AppendLine("For chat.answer, leave \"reply\" empty — it is written elsewhere.");
         sb.AppendLine("Slot keys: startDate, endDate (YYYY-MM-DD), reason, who.");
         sb.AppendLine("NEVER invent a date you were not told. Omit the slot instead.");
         sb.AppendLine("Bare \"kal\" in Bangla means BOTH tomorrow and yesterday — it is ambiguous.");
@@ -97,6 +103,18 @@ public class GeminiReasoner(
         sb.AppendLine("theke = from/since; porjonto = until; kal = tomorrow OR yesterday (ambiguous);");
         sb.AppendLine("aaj = today; ashbo na = I will not come; biye = wedding; osustho = sick;");
         sb.AppendLine("office ashbo na = I will not come to the office (this means leave).");
+        sb.AppendLine();
+
+        // Whisper may return Bengali script rather than Latin-script
+        // Banglish. Without these lines every example above is unreachable
+        // for exactly the users this matters most for.
+        sb.AppendLine("The same words in Bengali script mean the same things:");
+        sb.AppendLine("ছুটি = chuti = leave; ছুটি লাগবে = I need leave; আজ = aaj = today;");
+        sb.AppendLine("কাল = kal = tomorrow OR yesterday (ambiguous, emit \"ambiguous:kal\");");
+        sb.AppendLine("থেকে = theke = from; পর্যন্ত = porjonto = until; অসুস্থ = osustho = sick;");
+        sb.AppendLine("বিয়ে = biye = wedding; আমি এসেছি = ami eshechi = I have arrived.");
+        sb.AppendLine("  'কাল ছুটি লাগবে'");
+        sb.AppendLine("    -> {\"intent\":\"leave.apply\",\"slots\":{\"startDate\":\"ambiguous:kal\"}}");
         sb.AppendLine();
         sb.AppendLine("Examples (extract slots in Bangla and Banglish exactly as you would in English):");
         sb.AppendLine("  'kal chuti lagbe'");

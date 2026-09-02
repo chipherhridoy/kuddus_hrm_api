@@ -83,4 +83,51 @@ public class GeminiPromptTests
         var p = GeminiReasoner.BuildPrompt(In());
         Assert.Contains("2026-08-24", p);
     }
+
+    [Fact]
+    public void Prompt_offers_an_intent_for_real_questions()
+    {
+        // Without this, "who won the world cup" collapses into
+        // chat.smalltalk and gets the canned help reply.
+        var p = GeminiReasoner.BuildPrompt(In());
+        Assert.Contains("chat.answer", p);
+    }
+
+    [Fact]
+    public void Prompt_describes_what_belongs_in_chat_answer()
+    {
+        var p = GeminiReasoner.BuildPrompt(In());
+        Assert.Contains("general knowledge", p, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Prompt_teaches_the_Bengali_script_forms_too()
+    {
+        // Whisper may return Bengali script. Every Banglish example in the
+        // prompt is Latin-script, so without these the extraction silently
+        // degrades on exactly the users this feature is for.
+        var p = GeminiReasoner.BuildPrompt(In());
+
+        Assert.Contains("ছুটি", p);   // chuti — leave
+        Assert.Contains("কাল", p);    // kal — tomorrow OR yesterday
+        Assert.Contains("আজ", p);     // aaj — today
+    }
+
+    [Fact]
+    public void Bengali_script_kal_is_still_flagged_ambiguous()
+    {
+        var p = GeminiReasoner.BuildPrompt(In());
+        Assert.Contains("ambiguous:kal", p);
+    }
+
+    [Fact]
+    public void Chat_answer_does_not_displace_the_HR_intents()
+    {
+        var p = GeminiReasoner.BuildPrompt(In());
+
+        Assert.Contains("attendance.checkin", p);
+        Assert.Contains("leave.apply", p);
+        Assert.Contains("query.attendance", p);
+        Assert.Contains("control.confirm", p);
+    }
 }

@@ -117,6 +117,7 @@ public class LeavesController : ControllerBase
 
     [HttpPatch("{id}/status")]
     [HttpPut("{id}/status")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateLeaveStatus(int id, [FromBody] UpdateLeaveStatusRequest req)
     {
         var leave = await _db.LeaveRequests.Include(l => l.User).FirstOrDefaultAsync(l => l.Id == id);

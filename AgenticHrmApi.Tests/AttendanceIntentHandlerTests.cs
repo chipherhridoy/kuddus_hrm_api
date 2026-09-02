@@ -18,10 +18,13 @@ public class AttendanceIntentHandlerTests
     [Fact]
     public void Handles_only_attendance_intents()
     {
-        var (h, _) = Make(nameof(Handles_only_attendance_intents), new DateTime(2026, 8, 24, 9, 0, 0, DateTimeKind.Utc));
-        Assert.True(h.CanHandle("attendance.checkin"));
-        Assert.True(h.CanHandle("attendance.checkout"));
-        Assert.False(h.CanHandle("leave.apply"));
+        var (h, u) = Make(nameof(Handles_only_attendance_intents), new DateTime(2026, 8, 24, 9, 0, 0, DateTimeKind.Utc));
+
+        IntentContext Ctx(string intent) => new() { User = u, Intent = intent };
+
+        Assert.True(h.CanHandle(Ctx("attendance.checkin")));
+        Assert.True(h.CanHandle(Ctx("attendance.checkout")));
+        Assert.False(h.CanHandle(Ctx("leave.apply")));
     }
 
     [Fact]

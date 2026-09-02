@@ -8,7 +8,18 @@ public class ControlIntentHandler(
 {
     public const int MaxConfirmationReasks = 1;
 
-    public bool CanHandle(string intent) => intent.StartsWith("control.");
+    public bool CanHandle(IntentContext ctx)
+    {
+        if (!ctx.Intent.StartsWith("control.")) return false;
+
+        // A bare yes/no with nothing pending is not a confirmation — it is a
+        // reply to a conversational offer like "Want the details?". Decline
+        // so the router falls through to chat. "cancel" still means cancel.
+        if (ctx.Pending is null && ctx.Intent is "control.confirm" or "control.deny")
+            return false;
+
+        return true;
+    }
 
     public async Task<HandlerResult> HandleAsync(IntentContext ctx, CancellationToken ct = default)
     {

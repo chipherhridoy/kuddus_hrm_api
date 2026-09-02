@@ -25,6 +25,55 @@ public class ControlIntentHandlerTests
         Slots = new() { ["startDate"] = "2026-08-28", ["endDate"] = "2026-08-30", ["reason"] = "Family wedding" }
     };
 
+    private static IntentContext Confirm(AgenticHrmApi.Data.AppDbContext db, PendingAction? pending) =>
+        new()
+        {
+            User = db.Users.Find(3)!,
+            Intent = "control.confirm",
+            Transcript = "yes",
+            Pending = pending
+        };
+
+    [Fact]
+    public void Declines_a_bare_yes_when_nothing_is_pending()
+    {
+        // "Want the details?" -> "yes" must reach chat, not be answered with
+        // "Sorry, what would you like me to do?".
+        var h = Make(nameof(Declines_a_bare_yes_when_nothing_is_pending), out var db);
+        Assert.False(h.CanHandle(Confirm(db, null)));
+    }
+
+    [Fact]
+    public void Declines_a_bare_no_when_nothing_is_pending()
+    {
+        var h = Make(nameof(Declines_a_bare_no_when_nothing_is_pending), out var db);
+        var ctx = new IntentContext
+        {
+            User = db.Users.Find(3)!, Intent = "control.deny", Transcript = "no", Pending = null
+        };
+        Assert.False(h.CanHandle(ctx));
+    }
+
+    [Fact]
+    public void Still_handles_a_confirmation_when_something_is_pending()
+    {
+        var h = Make(nameof(Still_handles_a_confirmation_when_something_is_pending), out var db);
+        Assert.True(h.CanHandle(Confirm(db, ApplyLeave())));
+    }
+
+    [Fact]
+    public void Still_handles_cancel_with_nothing_pending()
+    {
+        // "cancel" is meaningful even with no pending action; only yes/no
+        // are ambiguous.
+        var h = Make(nameof(Still_handles_cancel_with_nothing_pending), out var db);
+        var ctx = new IntentContext
+        {
+            User = db.Users.Find(3)!, Intent = "control.cancel", Transcript = "never mind", Pending = null
+        };
+        Assert.True(h.CanHandle(ctx));
+    }
+
     [Fact]
     public async Task Affirmative_commits_the_pending_action()
     {
