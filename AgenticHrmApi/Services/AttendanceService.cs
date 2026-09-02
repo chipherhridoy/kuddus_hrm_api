@@ -11,12 +11,12 @@ public class AttendanceService(AppDbContext db, IClock clock)
     public static readonly TimeSpan LateAfter = new(9, 15, 0);
 
     public async Task<AttendanceOutcome> CheckInAsync(
-        int userId, double? latitude, double? longitude, string? notes, CancellationToken ct = default)
+        int userId, double? latitude, double? longitude, string? notes, DateTime? timestamp = null, CancellationToken ct = default)
     {
         var user = await db.Users.FindAsync([userId], ct);
         if (user is null) return new(false, "User not found.", null);
 
-        var now = clock.UtcNow;
+        var now = timestamp ?? clock.UtcNow;
         var today = now.Date;
 
         var existing = await db.AttendanceRecords
@@ -41,9 +41,9 @@ public class AttendanceService(AppDbContext db, IClock clock)
         return new(true, $"Checked in at {now:hh:mm tt}.", record);
     }
 
-    public async Task<AttendanceOutcome> CheckOutAsync(int userId, string? notes, CancellationToken ct = default)
+    public async Task<AttendanceOutcome> CheckOutAsync(int userId, string? notes, DateTime? timestamp = null, CancellationToken ct = default)
     {
-        var now = clock.UtcNow;
+        var now = timestamp ?? clock.UtcNow;
         var today = now.Date;
 
         var record = await db.AttendanceRecords

@@ -234,7 +234,11 @@ public class FaceController : ControllerBase
     public async Task<IActionResult> Delete(int userId)
     {
         var existing = await _db.FaceTemplates.Where(t => t.UserId == userId && t.IsActive).ToListAsync();
-        foreach (var ex in existing) ex.IsActive = false;
+        foreach (var ex in existing) 
+        {
+            ex.IsActive = false;
+            ex.UpdatedAt = DateTime.UtcNow;
+        }
 
         var user = await _db.Users.FindAsync(userId);
         if (user != null) user.FaceEnrolledAt = null;

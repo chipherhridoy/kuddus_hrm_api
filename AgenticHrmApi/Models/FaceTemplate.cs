@@ -12,11 +12,12 @@ public class FaceTemplate
     public byte[] Nonce { get; set; } = [];               // 12 bytes, unique per row
     public byte[] Tag { get; set; } = [];                 // 16 bytes
 
-    public string ModelVersion { get; set; } = "sface-2021dec";  // lets a future model coexist
+    public string ModelVersion { get; set; } = "mobilefacenet-tflite";  // lets a future model coexist
     public string Pose { get; set; } = "frontal";                // frontal|yaw_left|yaw_right|up|down
-    public float Quality { get; set; }                            // YuNet confidence at enrol time
+    public float Quality { get; set; }                            // Confidence at enrol time
 
     public int EnrolledByUserId { get; set; }             // the Admin who scanned. FROM THE JWT.
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public bool IsActive { get; set; } = true;
 }

@@ -175,4 +175,51 @@ public class AttendanceController : ControllerBase
             checkOutTime = record.CheckOutTime!.Value.ToString("hh:mm tt")
         });
     }
+
+    public class OfflinePunchItem
+    {
+        public int UserId { get; set; }
+        public string Type { get; set; } = "checkin"; // checkin or checkout
+        public DateTime Timestamp { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class OfflineSyncRequest
+    {
+        public List<OfflinePunchItem> Punches { get; set; } = new();
+    }
+
+    [HttpPost("offline-sync")]
+    public async Task<IActionResult> OfflineSync([FromBody] OfflineSyncRequest req)
+    {
+        var currentUserId = this.CurrentUserId();
+        var isAdmin = User.IsInRole("Admin");
+        var results = new List<object>();
+
+        foreach (var punch in req.Punches.OrderBy(p => p.Timestamp))
+        {
+            // Security: Normal users can only sync their own punches. Admins can sync anyone's punches.
+            if (!isAdmin && punch.UserId != currentUserId)
+            {
+                results.Add(new { punch.UserId, punch.Type, success = false, message = "Forbidden" });
+                continue;
+            }
+
+            AttendanceOutcome outcome;
+            if (punch.Type.ToLower() == "checkout")
+            {
+                outcome = await _attendanceService.CheckOutAsync(punch.UserId, punch.Notes, punch.Timestamp);
+            }
+            else
+            {
+                outcome = await _attendanceService.CheckInAsync(punch.UserId, punch.Latitude, punch.Longitude, punch.Notes, punch.Timestamp);
+            }
+
+            results.Add(new { punch.UserId, punch.Type, success = outcome.Success, message = outcome.Message });
+        }
+
+        return Ok(new { message = "Offline sync processed", results });
+    }
 }
